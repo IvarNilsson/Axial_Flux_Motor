@@ -184,8 +184,19 @@ def check_coils():  # checks which coil combination is "open"    WARNING: this d
         coils[1] = -1
     return coils
 
+def blink():
+    led.value(1)
+    time.sleep(0.3)
+    led.value(0)
+    time.sleep(0.1)
+    led.value(1)
+    time.sleep(0.3)
+    led.value(0)
 
 while True:
+
+    blink()
+
     if (start):
         start = 0
         off_all()
@@ -220,3 +231,5 @@ while True:
 
     AG_off()  # 6
     BG_on()  # 6
+
+    time.sleep(1)

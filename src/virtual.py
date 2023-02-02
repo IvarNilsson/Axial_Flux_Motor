@@ -202,6 +202,8 @@ for i in range(5):
     if (start):
         start = 0
         off_all()
+        if (seems_good() != 2):
+            print("ERROR", seems_good())
 
         BG_on()  # 0 (only on startup)
         AV_on()  # 0 (only on startup)
@@ -247,3 +249,5 @@ for i in range(5):
     BG_on()  # 6
     if (seems_good() != 1):
         print("ERROR", seems_good())
+
+    time.sleep(1)
