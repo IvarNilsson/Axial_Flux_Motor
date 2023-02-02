@@ -10,6 +10,68 @@ CG = 0
 
 states = [1, 1, 1, 0, 0, 0]  # [0]=AV, [1]=BV, [2]=CV, [3]=AG, [4]=BG, [5]=CG
 
+start = 1
+
+
+def AV_on():  # V_on
+    AV = 0
+    states[0] = 0
+
+
+def BV_on():
+    BV = 0
+    states[1] = 0
+
+
+def CV_on():
+    CV = 0
+    states[2] = 0
+
+
+def AV_off():  # V_off
+    AV = 0
+    states[0] = 1
+
+
+def BV_off():
+    BV = 0
+    states[1] = 1
+
+
+def CV_off():
+    CV = 0
+    states[2] = 1
+
+
+def AG_on():  # G_on
+    AG = 0
+    states[3] = 1
+
+
+def BG_on():
+    BG = 0
+    states[4] = 1
+
+
+def CG_on():
+    CG = 0
+    states[5] = 1
+
+
+def AG_off():  # G_off
+    AG = 0
+    states[3] = 0
+
+
+def BG_off():
+    BG = 0
+    states[4] = 0
+
+
+def CG_off():
+    CG = 0
+    states[5] = 0
+
 
 def off_all():
     AV = 1
@@ -137,26 +199,51 @@ def seems_good():  # auto checks (0=bad 1=good 2=off)
 for i in range(5):
     print("loop", i)
 
-    off_all()
-    coil_1_2()
-    time.sleep(0.5)
+    if (start):
+        start = 0
+        off_all()
 
-    off_all()
-    coil_1_3()
-    time.sleep(0.5)
+        BG_on()  # 0 (only on startup)
+        AV_on()  # 0 (only on startup)
+        if (seems_good() != 1):
+            print("ERROR", seems_good())
+    else:
+        CV_off()  # 1
+        AV_on()  # 1
+        if (seems_good() != 1):
+            print("ERROR", seems_good())
 
-    off_all()
-    coil_2_3()
-    time.sleep(0.5)
+    time.sleep(1)
 
-    off_all()
-    coil_2_1()
-    time.sleep(0.5)
+    BG_off()  # 2
+    CG_on()  # 2
+    if (seems_good() != 1):
+        print("ERROR", seems_good())
 
-    off_all()
-    coil_3_1()
-    time.sleep(0.5)
+    time.sleep(1)
 
-    off_all()
-    coil_3_2()
-    time.sleep(0.5)
+    AV_off()  # 3
+    BV_on()  # 3
+    if (seems_good() != 1):
+        print("ERROR", seems_good())
+
+    time.sleep(1)
+
+    CG_off()  # 4
+    AG_on()  # 4
+    if (seems_good() != 1):
+        print("ERROR", seems_good())
+
+    time.sleep(1)
+
+    BV_off()  # 5
+    CV_on()  # 5
+    if (seems_good() != 1):
+        print("ERROR", seems_good())
+
+    time.sleep(1)
+
+    AG_off()  # 6
+    BG_on()  # 6
+    if (seems_good() != 1):
+        print("ERROR", seems_good())
