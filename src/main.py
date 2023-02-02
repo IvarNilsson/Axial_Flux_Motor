@@ -13,22 +13,20 @@ states = [1, 1, 1, 0, 0, 0]  # [0]=AV, [1]=BV, [2]=CV, [3]=AG, [4]=BG, [5]=CG
 
 start = 1
 
-# correct order: (all off first)
 
-# first loop AV=0, BG=1 (coil 1_2)
-# else AV=0, CV=0
-# delay
-# BG=0, CG=1 (coil 13)
-# delay
-# AV=1, BV=0 (coil 23)
-# delay
-# CG=0, AG=1 (coil 21)
-# delay
-# BV=1, CV=0 (coil 31)
-# delay
-# AG=0, BG=1 (coil 32)
-# delay
-# repeat!
+# if(start): AV on, BG on (coil 12)
+# else: CV off, AV on (coil 12)
+#   delay
+# BG off, CG on (coil 13)
+#   delay
+# AV off, BV on (coil 23)
+#   delay
+# CG off, AG on (coil 21)
+#   delay
+# BV off, CV on (coil 31)
+#   delay
+# AG off, BG on (coil 32)
+#   delay
 
 
 def AV_on():  # V_on
@@ -184,6 +182,7 @@ def check_coils():  # checks which coil combination is "open"    WARNING: this d
         coils[1] = -1
     return coils
 
+
 def blink():
     led.value(1)
     time.sleep(0.3)
@@ -192,6 +191,7 @@ def blink():
     led.value(1)
     time.sleep(0.3)
     led.value(0)
+
 
 while True:
 
