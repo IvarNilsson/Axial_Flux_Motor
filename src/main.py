@@ -74,13 +74,37 @@ def check_short():  # check if combination shorts the circuit
     if (states[0] == 0 and states[3] == 1):
         print("short! 1")
         short = 1
-    elif (states[1] == 0 and states[4] == 1):
+    if (states[1] == 0 and states[4] == 1):
         print("short! 2")
         short = 1
-    elif (states[2] == 0 and states[5] == 1):
+    if (states[2] == 0 and states[5] == 1):
         print("short! 3")
         short = 1
     return short
+
+def check_coils(): # checks which coil combination is "open"    WARNING: this do not check for shorts!
+    coils = [0, 0, 0] # coil 1,2,3 (0=off 1=posetive -1=negative)
+    if (states[0] == 0 and states[4] == 1):
+        coils[0] = 1
+        coils[1] = -1
+    if (states[0] == 0 and states[5] == 1):
+        coils[0] = 1
+        coils[2] = -1
+    if (states[1] == 0 and states[3] == 1):
+        coils[1] = 1
+        coils[0] = -1
+    if (states[1] == 0 and states[5] == 1):
+        coils[1] = 1
+        coils[2] = -1
+    if (states[2] == 0 and states[3] == 1):
+        coils[2] = 1
+        coils[0] = -1
+    if (states[2] == 0 and states[4] == 1):
+        coils[2] = 1
+        coils[1] = -1
+    return coils
+
+
 
 
 while True:
