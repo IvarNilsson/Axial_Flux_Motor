@@ -2,6 +2,9 @@ venv
 .idea
 /shelf/
 /workspace.xml
+esp8266
+.editorconfig
+.vscode
 
 
 
