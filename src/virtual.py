@@ -251,4 +251,3 @@ for i in range(5):
         print("ERROR", seems_good())
 
     time.sleep(1)
-    
