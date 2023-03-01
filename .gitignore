@@ -5,6 +5,7 @@ venv
 esp8266
 .editorconfig
 .vscode
+lib
 
 
 
