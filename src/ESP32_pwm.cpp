@@ -1,46 +1,116 @@
 #include <Arduino.h>
 
+//#include "driver/gpio.h"
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/task.h"
+
 #define pi 3.14159265358979323846
+unsigned long t;
+int pwm_pin1 = 25;
+int pwm_pin2 = 26;
+int pwm_pin3 = 27;
+int pwm_pin4 = 12;
+int pwm_pin5 = 13;
+int pwm_pin6 = 14;
+
+#define POTENTIOMETER_PIN 33
+#define ANALOG_THRESHOLD  1000
+
+double sin1;
+double sin2;
+double sin3;
+
+double tri;
+
+double amplitude_sin = 1;
+double amplitude_tri = 1;
+
+double phase1 = 0;
+double phase2 = -2 * pi / 3;
+double phase3 = -4 * pi / 3;
+double freq_sin = 0.0001;
+double freq_tri = 200 * freq_sin;
+
+int analogValue = 0;
 
 void setup() {
   Serial.begin(115200);
+  pinMode(pwm_pin1, OUTPUT);
+  pinMode(pwm_pin2, OUTPUT);
+  pinMode(pwm_pin3, OUTPUT);
+  pinMode(pwm_pin4, OUTPUT);
+  pinMode(pwm_pin5, OUTPUT);
+  pinMode(pwm_pin6, OUTPUT);
+  //gpio_pad_select_gpio(pwm_pin1);
+  //gpio_set_direction(pwm_pin1, GPIO_MODE_OUTPUT);
+
+  //gpio_pad_select_gpio(pwm_pin2);
+  //gpio_set_direction(pwm_pin2, GPIO_MODE_OUTPUT);
+
+  //gpio_pad_select_gpio(pwm_pin2);
+  //gpio_set_direction(pwm_pin2, GPIO_MODE_OUTPUT);
 }
 
-int pwm_pin1 = 25; // check refrence for good pins
-int pwm_pin2 = 25;
-int pwm_pin3 = 25;
-
-
-
 void loop() {
-  
+  t = millis();
+
+  analogValue = (int) analogRead(POTENTIOMETER_PIN) / 100;
+  freq_tri = analogValue * freq_sin;
+
+  if (analogValue == 0) {
+    freq_tri = 1 * freq_sin;
+  }
+
+  sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
+  sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
+  sin3 = sample_sin(t, amplitude_sin, freq_sin, phase3);
+
+  tri = sample_tri(t, amplitude_tri, freq_tri);
+
+  if (sin1 > tri) {
+    digitalWrite(pwm_pin4, 1);
+    digitalWrite(pwm_pin1, 1);
+  } else {
+    digitalWrite(pwm_pin1, 0);
+    digitalWrite(pwm_pin4, 0);
+  }
+
+  if (sin2 > tri) {
+    digitalWrite(pwm_pin5, 1);
+    digitalWrite(pwm_pin2, 1);
+  } else {
+    digitalWrite(pwm_pin2, 0);
+    digitalWrite(pwm_pin5, 0);
+  }
+
+  if (sin3 > tri) {
+    digitalWrite(pwm_pin6, 1);
+    digitalWrite(pwm_pin3, 1);
+  } else {
+    digitalWrite(pwm_pin3, 0);
+    digitalWrite(pwm_pin6, 0);
+  }
+
 }
 
 double sample_sin(double t, double amplitude, double freq, double phase) {
-    return amplitude * sin(2 * pi * freq * t + phase);
+  return amplitude * sin(2 * pi * freq * t + phase);
 };
 
 double sample_tri(double t, double amplitude, double freq) {
-    double res = 0.0;
-    double fullPeriodTime = 1.0 / freq;
-    double localTime = fmod(t, fullPeriodTime);
+  double res = 0.0;
+  double fullPeriodTime = 1.0 / freq;
+  double localTime = fmod(t, fullPeriodTime);
 
-    double value = localTime / fullPeriodTime;
+  double value = localTime / fullPeriodTime;
 
-    if (value < 0.25) {
-        res = value * 4;
-    } else if (value < 0.75) {
-        res = 2.0 - (value * 4.0);
-    } else {
-        res = value * 4 - 4.0;
-    }
+  if (value < 0.25) {
+    res = value * 4;
+  } else if (value < 0.75) {
+    res = 2.0 - (value * 4.0);
+  } else {
+    res = value * 4 - 4.0;
+  }
 
-    return amplitude * res;
+  return amplitude * res;
 };
-
-// ESP32 has two 8-bit DAC (digital to analog converter) channels, connected to GPIO25 (Channel 1) and GPIO26 (Channel 2)
-// Square wave   = amplitude . sin(x) + sin(3.x) / 3 +  sin (5.x) / 5 + sin (7.x) / 7  + sin (9.x) / 9  + sin (11.x) / 11  Odd harmonics
-// Triangle wave = amplitude . sin(x) - 1/3^2.sin(3.x) +  1/5^2.sin(5.x) - 1/7^2.sin (7.x) + 1/9^2.sin(9.x) - 1/11^2.sin (11.x) Odd harmonics
-// dacWrite(pin, int(128 + 80 * (sin(deg*PI/180)))); // GPIO Pin mode (OUTPUT) is set by the dacWrite function
-// dacWrite(pin, int(128 + 80 * (sin(deg*PI/180)+sin(3*deg*PI/180)/3+sin(5*deg*PI/180)/5+sin(7*deg*PI/180)/7+sin(9*deg*PI/180)/9+sin(11*deg*PI/180)/11))); // Square
-// dacWrite(pin, int(128 + 80 * (sin(deg*PI/180)+1/pow(3,2)*sin(3*deg*PI/180)+1/pow(5,2)*sin(5*deg*PI/180)+1/pow(7,2)*sin(7*deg*PI/180)+1/pow(9,2)*sin(9*deg*PI/180)))); // Triangle
