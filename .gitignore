@@ -6,6 +6,6 @@ esp8266
 .editorconfig
 .vscode
 lib
-
-
+a.out
+data
 
