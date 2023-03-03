@@ -8,4 +8,6 @@ esp8266
 lib
 a.out
 data
+run_esp32
+
 

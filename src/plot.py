@@ -55,7 +55,10 @@ pwm3.plot(data_pwm3, linewidth=0.5)
 
 
 plt.xlabel('Sample number')
-plt.ylabel('Amplitude')
+wave.set_ylabel('Amplitude')
+wave.set_ylabel('Amplitude')
+wave.set_ylabel('Amplitude')
+
 wave.set_title('PWM_simulated')
 
 plt.show()

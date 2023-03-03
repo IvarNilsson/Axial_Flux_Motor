@@ -41,8 +41,8 @@ int main() {
     double phase1 = 0;
     double phase2 = -2 * pi / 3;
     double phase3 = -4 * pi / 3;
-    double freq_sin = 1;
-    double freq_tri = 20;
+    double freq_sin = 10;
+    double freq_tri = 200;
 
     double sine1;
     double sine2;
