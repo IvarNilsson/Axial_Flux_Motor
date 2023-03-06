@@ -4,9 +4,9 @@ const int LEDPin = 16; /* GPIO16 */
 
 int dutyCycle;
 /* Setting PWM Properties */
-const int PWMFreq = 5000;  // 5 KHz
+const int PWMFreq = 2;  // 5 KHz
 const int PWMChannel = 0;
-const int PWMResolution = 16;  // might be max 15!
+const int PWMResolution = 15;  // might be max 15!
 const int MAX_DUTY_CYCLE = (int)(pow(2, PWMResolution) - 1);
 
 void setup() {
