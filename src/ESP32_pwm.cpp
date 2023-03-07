@@ -94,51 +94,54 @@ void Task1code(void* pvParameters) {
   Serial.println("Waves + DigitaWrite");
   for (;;) {
     vTaskDelay(1);
-    t = millis();
+    // i < 50000 is probebly stable
+    for (uint16_t i = 0; i < 50000; i++) {
+      t = millis();
 
-    /*
-      if (count1 == 10000 && live1) {  // for tests
-        t_test1 = t;
-      } else if (count1 == 20000 && live) {
-        t_test1 = t - t_test1;
-        live = false;
+      /*
+        if (count1 == 10000 && live1) {  // for tests
+          t_test1 = t;
+        } else if (count1 == 20000 && live) {
+          t_test1 = t - t_test1;
+          live = false;
+        }
+        count++;
+
+        if (!live1) {  // for tests
+          Serial.println(t_test1);
+          live1 = true;
+        }
+      */
+
+      sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
+      sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
+      sin3 = sample_sin(t, amplitude_sin, freq_sin, phase3);
+
+      tri = sample_tri(t, amplitude_tri, freq_tri);
+
+      if (sin1 > tri) {
+        digitalWrite(pwm_pin4, 1);
+        digitalWrite(pwm_pin1, 1);
+      } else {
+        digitalWrite(pwm_pin1, 0);
+        digitalWrite(pwm_pin4, 0);
       }
-      count++;
 
-      if (!live1) {  // for tests
-        Serial.println(t_test1);
-        live1 = true;
+      if (sin2 > tri) {
+        digitalWrite(pwm_pin5, 1);
+        digitalWrite(pwm_pin2, 1);
+      } else {
+        digitalWrite(pwm_pin2, 0);
+        digitalWrite(pwm_pin5, 0);
       }
-    */
 
-    sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
-    sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
-    sin3 = sample_sin(t, amplitude_sin, freq_sin, phase3);
-
-    tri = sample_tri(t, amplitude_tri, freq_tri);
-
-    if (sin1 > tri) {
-      digitalWrite(pwm_pin4, 1);
-      digitalWrite(pwm_pin1, 1);
-    } else {
-      digitalWrite(pwm_pin1, 0);
-      digitalWrite(pwm_pin4, 0);
-    }
-
-    if (sin2 > tri) {
-      digitalWrite(pwm_pin5, 1);
-      digitalWrite(pwm_pin2, 1);
-    } else {
-      digitalWrite(pwm_pin2, 0);
-      digitalWrite(pwm_pin5, 0);
-    }
-
-    if (sin3 > tri) {
-      digitalWrite(pwm_pin6, 1);
-      digitalWrite(pwm_pin3, 1);
-    } else {
-      digitalWrite(pwm_pin3, 0);
-      digitalWrite(pwm_pin6, 0);
+      if (sin3 > tri) {
+        digitalWrite(pwm_pin6, 1);
+        digitalWrite(pwm_pin3, 1);
+      } else {
+        digitalWrite(pwm_pin3, 0);
+        digitalWrite(pwm_pin6, 0);
+      }
     }
   }
 }
@@ -155,7 +158,10 @@ void Task2code(void* pvParameters) {
   for (;;) {
     vTaskDelay(10);
     analogValue = analogRead(POTENTIOMETER_PIN);
-    freq_sin = 0.00001 * analogValue;
+    if (analogValue < 200) {
+      analogValue = 200;
+    }
+    freq_sin = 0.000005 * analogValue;
     Serial.print("sin freq: ");
     Serial.println(freq_sin * 1000);
     vTaskDelay(1000);
@@ -187,4 +193,3 @@ double sample_tri(double t, double amplitude, double freq) {
 void loop() {
   vTaskDelay(portMAX_DELAY);
 }
-
