@@ -8,7 +8,9 @@
 
 #define POTENTIOMETER_PIN 33
 
-#define pwm_pin1 25
+#define DAC_CH1 25
+
+#define pwm_pin1 32
 #define pwm_pin2 26
 #define pwm_pin3 27
 #define pwm_pin4 12
@@ -33,7 +35,7 @@ double phase1 = 0;
 double phase2 = -2 * pi / 3;
 double phase3 = -4 * pi / 3;
 double freq_sin = 0.0005;
-double freq_tri = 10;  // minst 10-20kHz (trevlig 20-40kHz) 10=10k
+double freq_tri = 0.1;  // minst 10-20kHz (trevlig 20-40kHz) 10=10k
 
 double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
 // Vab = Va - Vb
@@ -139,6 +141,8 @@ void Task1code(void* pvParameters) {
       sin3 = sample_sin(t, amplitude_sin, freq_sin, phase3);
 
       tri = sample_tri(t, amplitude_tri, freq_tri);
+
+      dacWrite(DAC_CH1, 128+64*sin1);
 
       if (sin1 > tri) {
         digitalWrite(pwm_pin4, 1);
