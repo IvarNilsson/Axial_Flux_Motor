@@ -33,7 +33,7 @@ double phase1 = 0;
 double phase2 = -2 * pi / 3;
 double phase3 = -4 * pi / 3;
 double freq_sin = 0.0005;
-double freq_tri = 40;  // minst 10-20kHz (trevlig 20-40kHz) 2=40k?
+double freq_tri = 10;  // minst 10-20kHz (trevlig 20-40kHz) 10=10k
 
 double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
 // Vab = Va - Vb
@@ -41,6 +41,7 @@ double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
 // Vca = Vc - Va
 
 int analogValue = 0;
+int old_analogValue = 0;
 
 unsigned long t_test1 = 0;  // for tests
 unsigned long t_test2 = 0;  // for tests
@@ -48,6 +49,8 @@ int count1 = 0;             // for tests
 int count2 = 0;             // for tests
 boolean live1 = true;       // for tests
 boolean live2 = true;       // for tests
+double cycle1 = 0;
+
 
 void setup() {
   Serial.begin(115200);
@@ -65,6 +68,15 @@ void setup() {
 
   // gpio_pad_select_gpio(pwm_pin2);
   // gpio_set_direction(pwm_pin2, GPIO_MODE_OUTPUT);
+
+  Serial.println("________________________");
+  Serial.print("CPU freq: ");
+  Serial.print(getCpuFrequencyMhz());
+  Serial.println(" MHz");
+  Serial.print("Abp freq: ");
+  Serial.print(getApbFrequency() / 1000000);
+  Serial.println(" MHz");
+  Serial.println("________________________");
 
   xTaskCreatePinnedToCore(
     Task1code, /* Task function. */
@@ -92,26 +104,35 @@ void Task1code(void* pvParameters) {
   Serial.println(xPortGetCoreID());
   Serial.print("Task1: ");
   Serial.println("Waves + DigitaWrite");
+  Serial.println("________________________");
   for (;;) {
     vTaskDelay(1);
     // i < 50000 is probebly stable
     for (uint16_t i = 0; i < 50000; i++) {
       t = millis();
 
-      /*
-        if (count1 == 10000 && live1) {  // for tests
-          t_test1 = t;
-        } else if (count1 == 20000 && live) {
-          t_test1 = t - t_test1;
-          live = false;
-        }
-        count++;
 
-        if (!live1) {  // for tests
-          Serial.println(t_test1);
-          live1 = true;
-        }
-      */
+      if (count1 == 100000 && live1) {  // for tests
+        t_test1 = t;
+      } else if (count1 == 200000 && live1) {
+        t_test1 = t - t_test1;
+        live1 = false;
+      }
+      count1++;
+
+      if (!live1) {  // for tests
+        Serial.println("________________________");
+        Serial.print("delta t = ");
+        Serial.println(t_test1);
+        Serial.print("t per cycle = ");
+        cycle1 = ((double)t_test1) / ((double)100000);
+        Serial.println(cycle1);
+        Serial.print("f (cycles) = ");
+        Serial.println(1000 / cycle1);
+        Serial.println("________________________");
+        live1 = true;
+      }
+
 
       sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
       sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
@@ -151,19 +172,21 @@ void Task2code(void* pvParameters) {
   Serial.println(xPortGetCoreID());
   Serial.print("Task2: ");
   Serial.println("AnalogRead");
-  Serial.print("sin freq: ");
-  Serial.println(freq_sin * 1000);
-  Serial.print("tri freq: ");
-  Serial.println(freq_tri * 1000);
+  Serial.println("________________________");
   for (;;) {
     vTaskDelay(10);
     analogValue = analogRead(POTENTIOMETER_PIN);
+
     if (analogValue < 200) {
-      analogValue = 200;
+      freq_sin = 0.001;
+      old_analogValue = analogValue;
+    } else if (analogValue < 0.9 * old_analogValue || analogValue > 1.1 * old_analogValue) {
+      freq_sin = 0.000005 * analogValue;
+      old_analogValue = analogValue;
     }
-    freq_sin = 0.000005 * analogValue;
-    Serial.print("sin freq: ");
-    Serial.println(freq_sin * 1000);
+
+    //Serial.print("sin freq: ");
+    //Serial.println(freq_sin * 1000);
     vTaskDelay(1000);
   }
 }
