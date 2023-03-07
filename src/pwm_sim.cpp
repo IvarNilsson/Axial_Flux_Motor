@@ -35,8 +35,8 @@ double sample_tri(double t, double amplitude, double freq) {
 int main() {
     printf("%s \n", "Hellow");
 
-    double amplitude_sin = 1;
-    double amplitude_tri = 1.2;
+    double amplitude_sin = 3.3;
+    double amplitude_tri = 3.3;
 
     double phase1 = 0;
     double phase2 = -2 * pi / 3;
