@@ -26,7 +26,7 @@ double sin3;
 
 double tri;
 
-double amplitude_sin = 1;
+double amplitude_sin = 0.9;
 double amplitude_tri = 1;
 
 double phase1 = 0;
