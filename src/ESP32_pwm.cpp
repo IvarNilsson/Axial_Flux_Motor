@@ -28,8 +28,8 @@ double sin3;
 
 double tri;
 
-double amplitude_sin = 0.9;
-double amplitude_tri = 1;
+double amplitude_sin = 1;
+double amplitude_tri = 0.7;
 
 double phase1 = 0;
 double phase2 = -2 * pi / 3;
@@ -146,25 +146,31 @@ void Task1code(void* pvParameters) {
 
       if (sin1 > tri) {
         digitalWrite(pwm_pin4, 1);
+        delay(10);
         digitalWrite(pwm_pin1, 1);
       } else {
         digitalWrite(pwm_pin1, 0);
+        delay(10);
         digitalWrite(pwm_pin4, 0);
       }
 
       if (sin2 > tri) {
         digitalWrite(pwm_pin5, 1);
+        delay(10);
         digitalWrite(pwm_pin2, 1);
       } else {
         digitalWrite(pwm_pin2, 0);
+        delay(10);
         digitalWrite(pwm_pin5, 0);
       }
 
       if (sin3 > tri) {
         digitalWrite(pwm_pin6, 1);
+        delay(10);
         digitalWrite(pwm_pin3, 1);
       } else {
         digitalWrite(pwm_pin3, 0);
+        delay(10);
         digitalWrite(pwm_pin6, 0);
       }
     }
@@ -182,10 +188,10 @@ void Task2code(void* pvParameters) {
     analogValue = analogRead(POTENTIOMETER_PIN);
 
     if (analogValue < 200) {
-      freq_sin = 0.001;
+      freq_sin = 0.0003;
       old_analogValue = analogValue;
     } else if (analogValue < 0.9 * old_analogValue || analogValue > 1.1 * old_analogValue) {
-      freq_sin = 0.000005 * analogValue;
+      freq_sin = 0.000002 * analogValue;
       old_analogValue = analogValue;
     }
 
