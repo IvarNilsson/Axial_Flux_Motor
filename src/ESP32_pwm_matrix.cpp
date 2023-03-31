@@ -1,6 +1,10 @@
 #include <Arduino.h>
 #include <esp_task_wdt.h>
 
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
 #define POTENTIOMETER_PIN 33
 
 #define DAC_CH1 25
@@ -9,10 +13,27 @@
 #define pwm_pin2 26
 #define pwm_pin3 27
 
+#define btn 32
+
+#define hall_0 15
+#define hall_1 16
+#define hall_2 17
+#define hall_3 18
+#define hall_4 19
+#define hall_5 23
+
+#define SDA 21
+#define SCL 22
+
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 64
+
 // generat table using
 // https://daycounter.com/Calculators/Sine-Generator-Calculator.phtml
 #define Num_Samples 240  //  number of dample of signal
 #define MaxWaveTypes 2   // types of wave (sin=0, tri=1)
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
@@ -100,6 +121,33 @@ void setup() {
     pinMode(pwm_pin2, OUTPUT);
     pinMode(pwm_pin3, OUTPUT);
 
+    pinMode(hall_0, INPUT);
+    pinMode(hall_1, INPUT);
+    pinMode(hall_2, INPUT);
+    pinMode(hall_3, INPUT);
+    pinMode(hall_4, INPUT);
+    pinMode(hall_5, INPUT);
+
+    pinMode(btn, INPUT); // btn for changing the direction of the motor
+
+    // Address 0x3D for 128x64
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        Serial.println("ERROR 1");
+        Serial.println(F("SSD1306 allocation failed"));
+        Serial.println("ERROR 1");
+        for (;;)
+            ;
+    }
+    delay(2000);
+    display.clearDisplay();
+    // can chage font here :)
+    display.setTextSize(1);
+    display.setTextColor(WHITE);  // prova med fler färger!
+    display.setCursor(0, 10);
+    display.println("Hello, world!");
+    display.display();
+
+    // Print some nice data
     Serial.println("________________________");
     Serial.print("CPU freq: ");
     Serial.print(getCpuFrequencyMhz());
@@ -109,20 +157,22 @@ void setup() {
     Serial.println(" MHz");
     Serial.println("________________________");
 
+    // start the first core (Task1)
     xTaskCreatePinnedToCore(
-        Task1code, /* Task function. */
-        "Task1",   /* name of task. */
-        8192,     /* Stack size of task */ //10000 standard
-        NULL,      /* parameter of the task */
-        1,         /* priority of the task */
-        &Task1,    /* Task handle to keep track of created task */
-        0);        /* pin task to core 0 */
+        Task1code,                      /* Task function. */
+        "Task1",                        /* name of task. */
+        8192, /* Stack size of task */  // 10000 standard
+        NULL,                           /* parameter of the task */
+        1,                              /* priority of the task */
+        &Task1, /* Task handle to keep track of created task */
+        0);     /* pin task to core 0 */
     delay(500);
 
+    // start the second core (Task2)
     xTaskCreatePinnedToCore(
         Task2code, /* Task function. */
         "Task2",   /* name of task. */
-        8192,     /* Stack size of task */
+        8192,      /* Stack size of task */
         NULL,      /* parameter of the task */
         1,         /* priority of the task */
         &Task2,    /* Task handle to keep track of created task */
@@ -137,37 +187,17 @@ void Task1code(void* pvParameters) {
     Serial.println("Waves + DigitaWrite");
     Serial.println("________________________");
 
-    esp_task_wdt_init(30, false);
+    esp_task_wdt_init(30, false);  // sets watchdog timer to 30seconds and
+                                   // turns off reset on watchdog activation
 
     for (;;) {
         // vTaskDelay(1); // if I disabled watchdog correctly this should not be
         // a problem that we never sleep :)
-
         // optimize the i<500 probelby possible to increase
         // jump some samples to midigate the delay
         // for (uint16_t i = 0; i < 500; i++) {
 
-        // test case for running 1 000 000 cycles
-        t++;
-        if (t == 1000000) {  // for tests
-            t_test1 = millis();
-        } else if (t == 2000000) {
-            t_test1 = millis() - t_test1;
-            live1 = false;
-        }
-
-        if (!live1) {  // for tests
-            Serial.println("________________________");
-            Serial.print("delta t (ms) per 1000000 cykler= ");
-            Serial.println(t_test1);
-            Serial.print("t per cycle (ms)= ");
-            cycle1 = ((double)t_test1) / ((double)1000000, 5);
-            Serial.println(cycle1);
-            Serial.print("frequency triangle wave (kHz)");
-            Serial.println(1/(cycle1*240*1000), 5);
-            Serial.println("________________________");
-            live1 = true;
-        }
+        testcase_frequency_milion_cycles();  // test case for 1 000 000 cycles
 
         sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
         sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
@@ -236,6 +266,29 @@ double sample_sin(int t, double amplitude, double freq, double phase) {
 double sample_tri(int t, double amplitude, double freq) {
     t = (int)(t * freq) % Num_Samples;
     return WaveFormTable[1][(int)t] * amplitude;
+}
+
+void testcase_frequency_milion_cycles() {
+    t++;
+    if (t == 1000000) {  // for tests
+        t_test1 = millis();
+    } else if (t == 2000000) {
+        t_test1 = millis() - t_test1;
+        live1 = false;
+    }
+
+    if (!live1) {  // for tests
+        Serial.println("________________________");
+        Serial.print("delta t (ms) per 1000000 cykler= ");
+        Serial.println(t_test1);
+        Serial.print("t per cycle (ms)= ");
+        cycle1 = ((double)t_test1) / ((double)1000000, 5);
+        Serial.println(cycle1);
+        Serial.print("frequency triangle wave (kHz)");
+        Serial.println(1 / (cycle1 * 240 * 1000), 5);
+        Serial.println("________________________");
+        live1 = true;
+    }
 }
 
 void loop() { vTaskDelay(portMAX_DELAY); }
