@@ -1,12 +1,12 @@
+#include <Adafruit_GFX.h>      //display
+#include <Adafruit_SSD1306.h>  //display
 #include <Arduino.h>
-#include <esp_task_wdt.h>
-
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Wire.h>          //display
+#include <esp_task_wdt.h>  //remove or change watchdog
 
 #define POTENTIOMETER_PIN 33
 
+// not in use anymore but nice to have for tests with osciloscope
 #define DAC_CH1 25
 
 #define pwm_pin1 32
@@ -26,7 +26,7 @@
 #define SCL 22
 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
-#define SCREEN_HEIGHT 64
+#define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
 // generat table using
 // https://daycounter.com/Calculators/Sine-Generator-Calculator.phtml
@@ -128,15 +128,15 @@ void setup() {
     pinMode(hall_4, INPUT);
     pinMode(hall_5, INPUT);
 
-    pinMode(btn, INPUT); // btn for changing the direction of the motor
+    pinMode(btn, INPUT);  // btn for changing the direction of the motor
 
     // Address 0x3D for 128x64
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         Serial.println("ERROR 1");
         Serial.println(F("SSD1306 allocation failed"));
         Serial.println("ERROR 1");
-        for (;;)
-            ;
+        for (;;) {
+        }
     }
     delay(2000);
     display.clearDisplay();
@@ -244,6 +244,19 @@ void Task2code(void* pvParameters) {
     Serial.println("________________________");
     for (;;) {
         vTaskDelay(10);
+
+        if(digitalRead(btn)){
+            Serial.println("BTN (change diraction)");
+
+            // funktion för att bromsa och sedan vända och accelerera
+
+            double temp_phase = phase1;
+            phase1 = phase2;
+            phase2 = temp_phase; 
+            delay(1000); // så den inte byter massa när man klicka
+
+        }
+
         analogValue = analogRead(POTENTIOMETER_PIN);
 
         if (analogValue < 200) {
