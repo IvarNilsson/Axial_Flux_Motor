@@ -206,13 +206,13 @@ void Task1code(void* pvParameters) {
         tri = sample_tri(t, amplitude_tri, freq_tri);
 
         /*
-              Serial.println("________________________");
-              Serial.print(sin1);
-              Serial.print(", ");
-              Serial.print(sin2);
-              Serial.print(", ");
-              Serial.println(sin3);
-              Serial.println(tri);
+        Serial.println("________________________");
+        Serial.print(sin1);
+        Serial.print(", ");
+        Serial.print(sin2);
+        Serial.print(", ");
+        Serial.println(sin3);
+        Serial.println(tri);
         */
 
         if (sin1 > tri) {
@@ -245,16 +245,15 @@ void Task2code(void* pvParameters) {
     for (;;) {
         vTaskDelay(10);
 
-        if(digitalRead(btn)){
+        if (digitalRead(btn)) {
             Serial.println("BTN (change diraction)");
 
             // funktion för att bromsa och sedan vända och accelerera
 
             double temp_phase = phase1;
             phase1 = phase2;
-            phase2 = temp_phase; 
-            delay(1000); // så den inte byter massa när man klicka
-
+            phase2 = temp_phase;
+            delay(1000);  // så den inte byter massa när man klicka
         }
 
         analogValue = analogRead(POTENTIOMETER_PIN);
@@ -267,7 +266,7 @@ void Task2code(void* pvParameters) {
 
         // Serial.print("sin freq: ");
         // Serial.println(freq_sin * massa saker för att få den till typ Hz/kHz)
-        vTaskDelay(1000);
+        vTaskDelay(100);
     }
 }
 
