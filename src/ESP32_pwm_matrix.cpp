@@ -4,16 +4,12 @@
 #include <Wire.h>          //display
 #include <esp_task_wdt.h>  //remove or change watchdog
 
-#define POTENTIOMETER_PIN 33
-
-// not in use anymore but nice to have for tests with osciloscope
-#define DAC_CH1 25
-
-#define pwm_pin1 32
+#define pwm_pin1 25
 #define pwm_pin2 26
 #define pwm_pin3 27
 
 #define btn 32
+#define POTENTIOMETER_PIN 33
 
 #define hall_0 15
 #define hall_1 16
@@ -50,24 +46,21 @@ double amplitude_tri = 1;
 double phase1 = 0;
 double phase2 = Num_Samples / 3;
 double phase3 = Num_Samples * 2 / 3;
-double freq_sin = 0;
-double freq_tri = 1;  // mellan 0 & 1
+double freq_sin = 0;  // between 0 & 1
+double freq_tri = 1;
 
 double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
-// Vab = Va - Vb
-// Vbc = Vb - Vc
-// Vca = Vc - Va
 
 int analogValue = 0;
 int old_analogValue = 0;
 
+int test_length = 1000000;
 unsigned long t_test1 = 0;  // for tests
 unsigned long t_test2 = 0;  // for tests
 int count1 = 0;             // for tests
 int count2 = 0;             // for tests
 boolean live1 = true;       // for tests
 boolean live2 = true;       // for tests
-double cycle1 = 0;
 
 int t = 0;
 
@@ -130,6 +123,7 @@ void setup() {
 
     pinMode(btn, INPUT);  // btn for changing the direction of the motor
 
+    /*
     // Address 0x3D for 128x64
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         Serial.println("ERROR 1");
@@ -146,6 +140,7 @@ void setup() {
     display.setCursor(0, 10);
     display.println("Hello, world!");
     display.display();
+    */
 
     // Print some nice data
     Serial.println("________________________");
@@ -187,16 +182,10 @@ void Task1code(void* pvParameters) {
     Serial.println("Waves + DigitaWrite");
     Serial.println("________________________");
 
-    esp_task_wdt_init(30, false);  // sets watchdog timer to 30seconds and
-                                   // turns off reset on watchdog activation
+    esp_task_wdt_init(512, false);  // sets watchdog timer to 30seconds and
+                                    // turns off reset on watchdog activation
 
     for (;;) {
-        // vTaskDelay(1); // if I disabled watchdog correctly this should not be
-        // a problem that we never sleep :)
-        // optimize the i<500 probelby possible to increase
-        // jump some samples to midigate the delay
-        // for (uint16_t i = 0; i < 500; i++) {
-
         testcase_frequency_milion_cycles();  // test case for 1 000 000 cycles
 
         sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
@@ -204,16 +193,6 @@ void Task1code(void* pvParameters) {
         sin3 = sample_sin(t, amplitude_sin, freq_sin, phase3);
 
         tri = sample_tri(t, amplitude_tri, freq_tri);
-
-        /*
-        Serial.println("________________________");
-        Serial.print(sin1);
-        Serial.print(", ");
-        Serial.print(sin2);
-        Serial.print(", ");
-        Serial.println(sin3);
-        Serial.println(tri);
-        */
 
         if (sin1 > tri) {
             digitalWrite(pwm_pin1, 1);
@@ -232,7 +211,6 @@ void Task1code(void* pvParameters) {
         } else {
             digitalWrite(pwm_pin3, 0);
         }
-        //}
     }
 }
 
@@ -242,10 +220,12 @@ void Task2code(void* pvParameters) {
     Serial.print("Task2: ");
     Serial.println("AnalogRead");
     Serial.println("________________________");
+    int btn_press = 0;
     for (;;) {
         vTaskDelay(10);
 
-        if (digitalRead(btn)) {
+        if (digitalRead(btn) && btn_press == 0) {
+            btn_press = 1;
             Serial.println("BTN (change diraction)");
 
             // funktion för att bromsa och sedan vända och accelerera
@@ -253,7 +233,9 @@ void Task2code(void* pvParameters) {
             double temp_phase = phase1;
             phase1 = phase2;
             phase2 = temp_phase;
-            delay(1000);  // så den inte byter massa när man klicka
+            delay(1000);
+        } else if (!digitalRead(btn)) {
+            btn_press = 0;
         }
 
         analogValue = analogRead(POTENTIOMETER_PIN);
@@ -282,22 +264,28 @@ double sample_tri(int t, double amplitude, double freq) {
 
 void testcase_frequency_milion_cycles() {
     t++;
-    if (t == 1000000) {  // for tests
+    if (t == test_length) {
         t_test1 = millis();
-    } else if (t == 2000000) {
+    } else if (t == test_length * 2) {
         t_test1 = millis() - t_test1;
         live1 = false;
     }
 
-    if (!live1) {  // for tests
+    if (!live1) {
         Serial.println("________________________");
-        Serial.print("delta t (ms) per 1000000 cykler= ");
+        Serial.print("delta t (ms) per ");
+        Serial.print(test_length);
+        Serial.print(" cykler = ");
         Serial.println(t_test1);
-        Serial.print("t per cycle (ms)= ");
-        cycle1 = ((double)t_test1) / ((double)1000000, 5);
-        Serial.println(cycle1);
+        Serial.print("t per cycle (ms) = ");
+        double cycle = ((double)t_test1) / ((double)test_length);
+        Serial.println(cycle, 8);
+        Serial.print("Periodtid T (ms) = ");
+        double T = cycle * 240;
+        Serial.println(T, 8);
         Serial.print("frequency triangle wave (kHz)");
-        Serial.println(1 / (cycle1 * 240 * 1000), 5);
+        double f = 1 / T;
+        Serial.println(f);
         Serial.println("________________________");
         live1 = true;
     }
