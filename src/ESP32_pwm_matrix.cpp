@@ -46,13 +46,10 @@ double amplitude_tri = 1;
 double phase1 = 0;
 double phase2 = Num_Samples / 3;
 double phase3 = Num_Samples * 2 / 3;
-double freq_sin = 0;  // between 0 & 1
+double freq_sin = 0;  // between 0 & freq_tri
 double freq_tri = 1;
 
 double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
-
-int analogValue = 0;
-int old_analogValue = 0;
 
 int test_length = 1000000;
 unsigned long t_test1 = 0;  // for tests
@@ -220,10 +217,13 @@ void Task2code(void* pvParameters) {
     Serial.print("Task2: ");
     Serial.println("AnalogRead");
     Serial.println("________________________");
-    int btn_press = 0;
-    for (;;) {
-        vTaskDelay(10);
 
+    int btn_press = 0;
+
+    int analogValue = 0;
+    int old_analogValue = 10000;
+
+    for (;;) {
         if (digitalRead(btn) && btn_press == 0) {
             btn_press = 1;
             Serial.println("BTN (change diraction)");
@@ -240,16 +240,43 @@ void Task2code(void* pvParameters) {
 
         analogValue = analogRead(POTENTIOMETER_PIN);
 
-        if (analogValue < 200) {
-            freq_sin = 0.000005 * 200;
-        } else {
-            freq_sin = 0.000005 * analogValue;
+        if (analogValue > old_analogValue + 100 ||
+            analogValue < old_analogValue - 100) {
+            old_analogValue = analogValue;
+            Serial.print("go: ");
+            Serial.println(0.000003788 * analogValue - freq_sin, 10);
+            if (analogValue == 0) {
+                Serial.println("off");
+                // smooth_freq(0);
+                freq_sin = 0;
+            } else if (analogValue == 4095) {
+                Serial.println("49.5 Hz");
+                // smooth_freq(0.075);  // 49.5 Hz
+                freq_sin = 0.075;
+            } else {
+                Serial.println("0-10 Hz");
+                // smooth_freq(0.000003788 * analogValue);  // 0-10 Hz
+                freq_sin = 0.000003788 * analogValue;
+            }
+            Serial.print("sin freq: ");
+            Serial.println(freq_sin * 660);
         }
 
-        // Serial.print("sin freq: ");
-        // Serial.println(freq_sin * massa saker för att få den till typ Hz/kHz)
-        vTaskDelay(100);
+        vTaskDelay(200);
     }
+}
+
+void smooth_freq(double new_freq) {
+    while (freq_sin < new_freq - 0.00003 ||
+           freq_sin > new_freq + 0.00003) {  // ändra till ett intervall
+        if (freq_sin > new_freq) {           // deccelerate
+            freq_sin -= 0.00002;
+        } else if (freq_sin < new_freq) {  // accelerate
+            freq_sin += 0.00002;
+        }
+        delay(1);
+    }
+    freq_sin = new_freq;
 }
 
 double sample_sin(int t, double amplitude, double freq, double phase) {
@@ -281,7 +308,7 @@ void testcase_frequency_milion_cycles() {
         double cycle = ((double)t_test1) / ((double)test_length);
         Serial.println(cycle, 8);
         Serial.print("Periodtid T (ms) = ");
-        double T = cycle * 240;
+        double T = cycle * Num_Samples;
         Serial.println(T, 8);
         Serial.print("frequency triangle wave (kHz)");
         double f = 1 / T;
