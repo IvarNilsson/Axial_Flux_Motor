@@ -52,6 +52,7 @@ int analogValue = 0;
 int old_analogValue = 0;
 
 int test_length = 1000000;
+int test = 0;
 unsigned long t_test1 = 0;  // for tests
 unsigned long t_test2 = 0;  // for tests
 int count1 = 0;             // for tests
@@ -59,7 +60,6 @@ int count2 = 0;             // for tests
 boolean live1 = true;       // for tests
 boolean live2 = true;       // for tests
 
-int t = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -145,15 +145,17 @@ void Task2code(void* pvParameters) {
     for (;;) {
         vTaskDelay(10);
         analogValue = analogRead(POTENTIOMETER_PIN);
-
-        if (analogValue < 200) {
-            freq_sin = 0.0003;
-            old_analogValue = analogValue;
-        } else if (analogValue < 0.9 * old_analogValue ||
-                   analogValue > 1.1 * old_analogValue) {
-            freq_sin = 0.000002 * analogValue;
-            old_analogValue = analogValue;
-        }
+        /*
+                if (analogValue < 200) {
+                    freq_sin = 0.0003;
+                    old_analogValue = analogValue;
+                } else if (analogValue < 0.9 * old_analogValue ||
+                           analogValue > 1.1 * old_analogValue) {
+                    freq_sin = 0.000002 * analogValue;
+                    old_analogValue = analogValue;
+                }
+        */
+        freq_sin = 0.001;
 
         // Serial.print("sin freq: ");
         // Serial.println(freq_sin * 1000);
@@ -184,10 +186,10 @@ double sample_tri(double t, double amplitude, double freq) {
 }
 
 void testcase_frequency_milion_cycles() {
-    t++;
-    if (t == test_length) {
+    test++;
+    if (test == test_length) {
         t_test1 = millis();
-    } else if (t == test_length * 2) {
+    } else if (test == test_length * 2) {
         t_test1 = millis() - t_test1;
         live1 = false;
     }
@@ -201,12 +203,9 @@ void testcase_frequency_milion_cycles() {
         Serial.print("t per cycle (ms) = ");
         double cycle = ((double)t_test1) / ((double)test_length);
         Serial.println(cycle, 8);
-        Serial.print("Periodtid T (ms) = ");
-        double T = cycle / 10; // hur många cycler per T?
-        Serial.println(T, 8);
-        Serial.print("frequency triangle wave (kHz)");
-        double f = 1 / T;
-        Serial.println(f);
+        Serial.print("frequency cycle (kHz)");
+        double f_cycle = 1 / cycle;
+        Serial.println(f_cycle);
         Serial.println("________________________");
         live1 = true;
     }
