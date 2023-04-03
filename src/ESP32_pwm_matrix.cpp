@@ -60,6 +60,8 @@ boolean live1 = true;       // for tests
 boolean live2 = true;       // for tests
 
 int t = 0;
+double last_sin_value[3];
+double last_t_sin[3];
 
 static byte WaveFormTable[MaxWaveTypes][Num_Samples] = {
     // Sin wave
@@ -183,11 +185,12 @@ void Task1code(void* pvParameters) {
                                     // turns off reset on watchdog activation
 
     for (;;) {
+        t++;
         testcase_frequency_milion_cycles();  // test case for 1 000 000 cycles
 
-        sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
-        sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
-        sin3 = sample_sin(t, amplitude_sin, freq_sin, phase3);
+        sin1 = sample_sin(t, 0, amplitude_sin, freq_sin, phase1);
+        sin2 = sample_sin(t, 1, amplitude_sin, freq_sin, phase2);
+        sin3 = sample_sin(t, 2, amplitude_sin, freq_sin, phase3);
 
         tri = sample_tri(t, amplitude_tri, freq_tri);
 
@@ -247,15 +250,15 @@ void Task2code(void* pvParameters) {
             Serial.println(0.000003788 * analogValue - freq_sin, 10);
             if (analogValue == 0) {
                 Serial.println("off");
-                // smooth_freq(0);
+                // smooth_freq(0, freq_sin);
                 freq_sin = 0;
             } else if (analogValue == 4095) {
                 Serial.println("49.5 Hz");
-                // smooth_freq(0.075);  // 49.5 Hz
+                // smooth_freq(0.075, freq_sin);  // 49.5 Hz
                 freq_sin = 0.075;
             } else {
                 Serial.println("0-10 Hz");
-                // smooth_freq(0.000003788 * analogValue);  // 0-10 Hz
+                // smooth_freq(0.000003788 * analogValue, freq_sin);  // 0-10 Hz
                 freq_sin = 0.000003788 * analogValue;
             }
             Serial.print("sin freq: ");
@@ -266,7 +269,7 @@ void Task2code(void* pvParameters) {
     }
 }
 
-void smooth_freq(double new_freq) {
+void smooth_freq(double new_freq, double old_freq) {
     while (freq_sin < new_freq - 0.00003 ||
            freq_sin > new_freq + 0.00003) {  // ändra till ett intervall
         if (freq_sin > new_freq) {           // deccelerate
@@ -276,12 +279,27 @@ void smooth_freq(double new_freq) {
         }
         delay(1);
     }
+
+    // index innan (borde gå att ta bort (testa!))
+    //t = (int)((t * old_freq) + phase1) % Num_Samples;
+
+    // index efter (borde gå att ta bort (testa!))
+    //int t_new = (int)((t * new_freq) + phase1) % Num_Samples;
+    
     freq_sin = new_freq;
+
+    // detta kanske räcker
+    // denna kanske ska vara i loopen!
+    t = (int)((t * new_freq) + phase1) % Num_Samples;
+
 }
 
-double sample_sin(int t, double amplitude, double freq, double phase) {
+double sample_sin(int t, int sin_num, double amplitude, double freq,
+                  double phase) {
     t = (int)((t * freq) + phase) % Num_Samples;
-    return WaveFormTable[0][(int)t] * amplitude;
+    last_t_sin[sin_num] = t;
+    last_sin_value[sin_num] = WaveFormTable[0][(int)t] * amplitude;
+    return last_sin_value[sin_num];
 }
 
 double sample_tri(int t, double amplitude, double freq) {
@@ -290,7 +308,6 @@ double sample_tri(int t, double amplitude, double freq) {
 }
 
 void testcase_frequency_milion_cycles() {
-    t++;
     if (t == test_length) {
         t_test1 = millis();
     } else if (t == test_length * 2) {
