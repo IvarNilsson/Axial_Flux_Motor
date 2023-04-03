@@ -233,9 +233,9 @@ void Task2code(void* pvParameters) {
 
             // funktion för att bromsa och sedan vända och accelerera
 
-            double temp_phase = phase1;
-            phase1 = phase2;
-            phase2 = temp_phase;
+            double temp_phase = phase2;
+            phase2 = phase3;
+            phase3 = temp_phase;
             delay(1000);
         } else if (!digitalRead(btn)) {
             btn_press = 0;
@@ -250,16 +250,16 @@ void Task2code(void* pvParameters) {
             Serial.println(0.000003788 * analogValue - freq_sin, 10);
             if (analogValue == 0) {
                 Serial.println("off");
-                // smooth_freq(0, freq_sin);
-                freq_sin = 0;
+                smooth_freq(0, freq_sin);
+                // freq_sin = 0;
             } else if (analogValue == 4095) {
                 Serial.println("49.5 Hz");
-                // smooth_freq(0.075, freq_sin);  // 49.5 Hz
-                freq_sin = 0.075;
+                smooth_freq(0.075, freq_sin);  // 49.5 Hz
+                // freq_sin = 0.075;
             } else {
                 Serial.println("0-10 Hz");
-                // smooth_freq(0.000003788 * analogValue, freq_sin);  // 0-10 Hz
-                freq_sin = 0.000003788 * analogValue;
+                smooth_freq(0.000003788 * analogValue, freq_sin);  // 0-10 Hz
+                // freq_sin = 0.000003788 * analogValue;
             }
             Serial.print("sin freq: ");
             Serial.println(freq_sin * 660);
@@ -270,6 +270,32 @@ void Task2code(void* pvParameters) {
 }
 
 void smooth_freq(double new_freq, double old_freq) {
+    /* // detta är nog bara dåligt (looopen kommer aldrig sluta)
+    while ((int)((t * new_freq) + phase1) % Num_Samples !=
+           (int)((t * old_freq) + phase1) % Num_Samples) {
+        Serial.print(".");
+    }
+    */
+    Serial.print("Old index unta phase (borde vara samma som old_index): ");
+    int old_index_no_phase = (int)(t * old_freq) % Num_Samples;
+    Serial.println(old_index_no_phase);
+
+    Serial.print("Old index: ");
+    int old_index = (int)((t * old_freq) + phase1) % Num_Samples;
+    Serial.println(old_index);
+
+    Serial.print("New index: ");
+    int new_index = (int)((t * new_freq) + phase1) % Num_Samples;
+    Serial.println(new_index);
+
+    Serial.print("New index *k: ");
+    int new_index_k = 0; // typ 
+    /*
+    int new_index_k = old_index - new_index
+    */
+    Serial.println(new_index_k);
+
+    /*
     while (freq_sin < new_freq - 0.00003 ||
            freq_sin > new_freq + 0.00003) {  // ändra till ett intervall
         if (freq_sin > new_freq) {           // deccelerate
@@ -279,19 +305,8 @@ void smooth_freq(double new_freq, double old_freq) {
         }
         delay(1);
     }
-
-    // index innan (borde gå att ta bort (testa!))
-    //t = (int)((t * old_freq) + phase1) % Num_Samples;
-
-    // index efter (borde gå att ta bort (testa!))
-    //int t_new = (int)((t * new_freq) + phase1) % Num_Samples;
-    
+    */
     freq_sin = new_freq;
-
-    // detta kanske räcker
-    // denna kanske ska vara i loopen!
-    t = (int)((t * new_freq) + phase1) % Num_Samples;
-
 }
 
 double sample_sin(int t, int sin_num, double amplitude, double freq,
