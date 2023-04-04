@@ -1,8 +1,8 @@
 #include <Adafruit_GFX.h>      //display
 #include <Adafruit_SSD1306.h>  //display
-#include <Arduino.h>
-#include <Wire.h>          //display
-#include <esp_task_wdt.h>  //remove or change watchdog
+#include <Arduino.h>           //standarad
+#include <Wire.h>              //display
+#include <esp_task_wdt.h>      //remove or change watchdog
 
 #define pwm_pin1 25
 #define pwm_pin2 26
@@ -34,14 +34,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
-double sin1;
-double sin2;
-double sin3;
-
-double tri;
-
 int t = 0;
-boolean active = true; // True -> Output = on
+boolean active = true;  // True -> Output = on
 
 double amplitude_sin = 1;
 double amplitude_tri = 1;
@@ -53,9 +47,6 @@ double phase3 = Num_Samples * 2 / 3;
 double freq_sin = 0;  // between 0 & freq_tri
 double freq_tri = 1;
 
-// double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
-
-int test_length = 1000000;  // for tests
 unsigned long t_test1 = 0;  // for tests
 boolean live1 = true;       // for tests
 
@@ -177,12 +168,20 @@ void Task1code(void* pvParameters) {
     Serial.println("Waves + DigitaWrite");
     Serial.println("________________________");
 
-    esp_task_wdt_init(512, false);  // sets watchdog timer to 30seconds and
-                                    // turns off reset on watchdog activation
+    esp_task_wdt_init(512, false);  // turns off reset on watchdog activation
+
+    int test_length = 1000000;  // for tests
+
+    double sin1;
+    double sin2;
+    double sin3;
+
+    double tri;
 
     for (;;) {
         t++;
-        testcase_frequency_milion_cycles();  // test case for 1 000 000 cycles
+        testcase_frequency_milion_cycles(
+            test_length);  // test case for 1 000 000 cycles
 
         sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
         sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
@@ -218,7 +217,6 @@ void Task2code(void* pvParameters) {
     Serial.println("________________________");
 
     int btn_press = 0;
-
     int analogValue = 0;
     int old_analogValue = 10000;
 
@@ -279,7 +277,6 @@ void Task2code(void* pvParameters) {
             Serial.print("sin freq: ");
             Serial.println(freq_sin * 660);
         }
-
         vTaskDelay(100);
     }
 }
@@ -324,7 +321,7 @@ double sample_tri(int t, double amplitude, double freq) {
     return WaveFormTable[1][(int)t] * amplitude;
 }
 
-void testcase_frequency_milion_cycles() {
+void testcase_frequency_milion_cycles(int test_length) {
     if (t == test_length) {
         t_test1 = millis();
     } else if (t == test_length * 2) {
