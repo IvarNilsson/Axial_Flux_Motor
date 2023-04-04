@@ -21,13 +21,13 @@
 #define SDA 21
 #define SCL 22
 
-#define SCREEN_WIDTH 128  // OLED display width, in pixels
-#define SCREEN_HEIGHT 64  // OLED display height, in pixels
-
 // generat table using
 // https://daycounter.com/Calculators/Sine-Generator-Calculator.phtml
 #define Num_Samples 240  //  number of dample of signal
 #define MaxWaveTypes 2   // types of wave (sin=0, tri=1)
+
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
@@ -40,28 +40,24 @@ double sin3;
 
 double tri;
 
+int t = 0;
+boolean active = true; // True -> Output = on
+
 double amplitude_sin = 1;
 double amplitude_tri = 1;
 
 double phase1 = 0;
 double phase2 = Num_Samples / 3;
 double phase3 = Num_Samples * 2 / 3;
+
 double freq_sin = 0;  // between 0 & freq_tri
 double freq_tri = 1;
 
-double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
+// double ma = amplitude_sin / amplitude_tri;  // Amplitude modulation ratio!
 
-int test_length = 1000000;
+int test_length = 1000000;  // for tests
 unsigned long t_test1 = 0;  // for tests
-unsigned long t_test2 = 0;  // for tests
-int count1 = 0;             // for tests
-int count2 = 0;             // for tests
 boolean live1 = true;       // for tests
-boolean live2 = true;       // for tests
-
-int t = 0;
-double last_sin_value[3];
-double last_t_sin[3];
 
 static byte WaveFormTable[MaxWaveTypes][Num_Samples] = {
     // Sin wave
@@ -188,25 +184,25 @@ void Task1code(void* pvParameters) {
         t++;
         testcase_frequency_milion_cycles();  // test case for 1 000 000 cycles
 
-        sin1 = sample_sin(t, 0, amplitude_sin, freq_sin, phase1);
-        sin2 = sample_sin(t, 1, amplitude_sin, freq_sin, phase2);
-        sin3 = sample_sin(t, 2, amplitude_sin, freq_sin, phase3);
+        sin1 = sample_sin(t, amplitude_sin, freq_sin, phase1);
+        sin2 = sample_sin(t, amplitude_sin, freq_sin, phase2);
+        sin3 = sample_sin(t, amplitude_sin, freq_sin, phase3);
 
         tri = sample_tri(t, amplitude_tri, freq_tri);
 
-        if (sin1 > tri) {
+        if (sin1 > tri && active) {
             digitalWrite(pwm_pin1, 1);
         } else {
             digitalWrite(pwm_pin1, 0);
         }
 
-        if (sin2 > tri) {
+        if (sin2 > tri && active) {
             digitalWrite(pwm_pin2, 1);
         } else {
             digitalWrite(pwm_pin2, 0);
         }
 
-        if (sin3 > tri) {
+        if (sin3 > tri && active) {
             digitalWrite(pwm_pin3, 1);
         } else {
             digitalWrite(pwm_pin3, 0);
@@ -231,90 +227,96 @@ void Task2code(void* pvParameters) {
             btn_press = 1;
             Serial.println("BTN (change diraction)");
 
-            // funktion för att bromsa och sedan vända och accelerera
-
+            double last_freq = freq_sin;
+            smooth_freq(0, freq_sin);
             double temp_phase = phase2;
             phase2 = phase3;
             phase3 = temp_phase;
-            delay(1000);
+            delay(50);
+            Serial.println(" ");
+            Serial.println("Changing");
+            smooth_freq(last_freq, freq_sin);
+            Serial.println(" ");
+            if (phase2 == Num_Samples / 3) {
+                Serial.println("Moturs");
+            } else {
+                Serial.println("Medurs");
+            }
+            delay(100);
         } else if (!digitalRead(btn)) {
             btn_press = 0;
+            delay(100);
         }
 
         analogValue = analogRead(POTENTIOMETER_PIN);
 
-        if (analogValue > old_analogValue + 100 ||
-            analogValue < old_analogValue - 100) {
+        if (analogValue == 0 && active) {
             old_analogValue = analogValue;
+            active = false;
+            Serial.println("off");
+            smooth_freq(0, freq_sin);
+            Serial.print("sin freq: ");
+            Serial.println(freq_sin * 660);
+
+        } else if (analogValue == 4095 && old_analogValue != 4095) {
+            old_analogValue = analogValue;
+            active = true;
+            Serial.print("go: ");
+            Serial.println("49.5 Hz");
+            smooth_freq(0.075, freq_sin);
+            Serial.print("sin freq: ");
+            Serial.println(freq_sin * 660);
+
+        } else if (analogValue > old_analogValue + 100 ||
+                   analogValue < old_analogValue - 100) {
+            old_analogValue = analogValue;
+            active = true;
             Serial.print("go: ");
             Serial.println(0.000003788 * analogValue - freq_sin, 10);
-            if (analogValue == 0) {
-                Serial.println("off");
-                smooth_freq(0, freq_sin);
-                // freq_sin = 0;
-            } else if (analogValue == 4095) {
-                Serial.println("49.5 Hz");
-                smooth_freq(0.075, freq_sin);  // 49.5 Hz
-                // freq_sin = 0.075;
-            } else {
-                Serial.println("0-10 Hz");
-                smooth_freq(0.000003788 * analogValue, freq_sin);  // 0-10 Hz
-                // freq_sin = 0.000003788 * analogValue;
-            }
+
+            Serial.println("0-10 Hz");
+            smooth_freq(0.000003788 * analogValue, freq_sin);  // 0-10 Hz
             Serial.print("sin freq: ");
             Serial.println(freq_sin * 660);
         }
 
-        vTaskDelay(200);
+        vTaskDelay(100);
     }
 }
 
 void smooth_freq(double new_freq, double old_freq) {
-    /* // detta är nog bara dåligt (looopen kommer aldrig sluta)
-    while ((int)((t * new_freq) + phase1) % Num_Samples !=
-           (int)((t * old_freq) + phase1) % Num_Samples) {
-        Serial.print(".");
-    }
-    */
-    Serial.print("Old index unta phase (borde vara samma som old_index): ");
-    int old_index_no_phase = (int)(t * old_freq) % Num_Samples;
-    Serial.println(old_index_no_phase);
-
-    Serial.print("Old index: ");
-    int old_index = (int)((t * old_freq) + phase1) % Num_Samples;
-    Serial.println(old_index);
-
-    Serial.print("New index: ");
-    int new_index = (int)((t * new_freq) + phase1) % Num_Samples;
-    Serial.println(new_index);
-
-    Serial.print("New index *k: ");
-    int new_index_k = 0; // typ 
-    /*
-    int new_index_k = old_index - new_index
-    */
-    Serial.println(new_index_k);
-
-    /*
-    while (freq_sin < new_freq - 0.00003 ||
-           freq_sin > new_freq + 0.00003) {  // ändra till ett intervall
-        if (freq_sin > new_freq) {           // deccelerate
-            freq_sin -= 0.00002;
-        } else if (freq_sin < new_freq) {  // accelerate
-            freq_sin += 0.00002;
+    double last_freq;
+    while (freq_sin < new_freq - 0.01 || freq_sin > new_freq + 0.01) {
+        last_freq = freq_sin;
+        if (freq_sin > new_freq) {
+            freq_sin -= 0.005;  // deccelerate
+        } else if (freq_sin < new_freq) {
+            freq_sin += 0.005;  // accelerate
         }
-        delay(1);
+        t = t * last_freq / freq_sin;
+        Serial.print(".");
+        delay(200);
     }
-    */
+
+    int old_index = (int)((t * old_freq)) % Num_Samples;
+
+    t = t * old_freq / new_freq;
     freq_sin = new_freq;
+
+    int new_index = (int)((t * freq_sin)) % Num_Samples;
+
+    if (new_index != old_index && new_index != 0) {
+        Serial.print("WARNING!(1) Index_MisMatch!");
+        Serial.print("Old_Index: ");
+        Serial.print(old_index);
+        Serial.print(", New_Index: ");
+        Serial.println(new_index);
+    }
 }
 
-double sample_sin(int t, int sin_num, double amplitude, double freq,
-                  double phase) {
+double sample_sin(int t, double amplitude, double freq, double phase) {
     t = (int)((t * freq) + phase) % Num_Samples;
-    last_t_sin[sin_num] = t;
-    last_sin_value[sin_num] = WaveFormTable[0][(int)t] * amplitude;
-    return last_sin_value[sin_num];
+    return WaveFormTable[0][(int)t] * amplitude;
 }
 
 double sample_tri(int t, double amplitude, double freq) {
