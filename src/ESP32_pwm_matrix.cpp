@@ -36,6 +36,7 @@ TaskHandle_t Task2;
 
 int t = 0;
 boolean active = true;  // True -> Output = on
+boolean clockwise = false;
 
 double amplitude_sin = 1;
 double amplitude_tri = 1;
@@ -109,7 +110,6 @@ void setup() {
 
     pinMode(btn, INPUT);  // btn for changing the direction of the motor
 
-    /*
     // Address 0x3D for 128x64
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         Serial.println("ERROR 1");
@@ -121,12 +121,13 @@ void setup() {
     delay(2000);
     display.clearDisplay();
     // can chage font here :)
-    display.setTextSize(1);
-    display.setTextColor(WHITE);  // prova med fler färger!
-    display.setCursor(0, 10);
-    display.println("Hello, world!");
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+    display.println("Hello, ");
+    display.setCursor(0, 20);
+    display.println("world!");
     display.display();
-    */
 
     // Print some nice data
     Serial.println("________________________");
@@ -237,13 +238,15 @@ void Task2code(void* pvParameters) {
             Serial.println(" ");
             if (phase2 == Num_Samples / 3) {
                 Serial.println("Moturs");
+                clockwise = false;
             } else {
                 Serial.println("Medurs");
+                clockwise = true;
             }
-            delay(100);
+            delay(200);
         } else if (!digitalRead(btn)) {
             btn_press = 0;
-            delay(100);
+            delay(200);
         }
 
         analogValue = analogRead(POTENTIOMETER_PIN);
@@ -255,6 +258,7 @@ void Task2code(void* pvParameters) {
             smooth_freq(0, freq_sin);
             Serial.print("sin freq: ");
             Serial.println(freq_sin * 660);
+            update_display();
 
         } else if (analogValue == 4095 && old_analogValue != 4095) {
             old_analogValue = analogValue;
@@ -264,6 +268,7 @@ void Task2code(void* pvParameters) {
             smooth_freq(0.075, freq_sin);
             Serial.print("sin freq: ");
             Serial.println(freq_sin * 660);
+            update_display();
 
         } else if (analogValue > old_analogValue + 100 ||
                    analogValue < old_analogValue - 100) {
@@ -276,8 +281,9 @@ void Task2code(void* pvParameters) {
             smooth_freq(0.000003788 * analogValue, freq_sin);  // 0-10 Hz
             Serial.print("sin freq: ");
             Serial.println(freq_sin * 660);
+            update_display();
         }
-        vTaskDelay(100);
+        vTaskDelay(20);
     }
 }
 
@@ -292,6 +298,7 @@ void smooth_freq(double new_freq, double old_freq) {
         }
         t = t * last_freq / freq_sin;
         Serial.print(".");
+        update_display();
         delay(200);
     }
 
@@ -309,6 +316,20 @@ void smooth_freq(double new_freq, double old_freq) {
         Serial.print(", New_Index: ");
         Serial.println(new_index);
     }
+}
+
+void update_display() {
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.print("f=");
+    if (!clockwise) {
+        display.print("-");
+    } else {
+        display.print(" ");
+    }
+    display.print(freq_sin * 660);
+    display.print("Hz");
+    display.display();
 }
 
 double sample_sin(int t, double amplitude, double freq, double phase) {
