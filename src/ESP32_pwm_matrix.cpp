@@ -108,7 +108,7 @@ void setup() {
     pinMode(hall_4, INPUT);
     pinMode(hall_5, INPUT);
 
-    pinMode(btn, INPUT);  // btn for changing the direction of the motor
+    pinMode(btn, INPUT_PULLUP);  // btn for changing the direction of the motor
 
     // Address 0x3D for 128x64
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -239,20 +239,22 @@ void Task2code(void* pvParameters) {
             if (phase2 == Num_Samples / 3) {
                 Serial.println("Moturs");
                 clockwise = false;
+                update_display();
             } else {
                 Serial.println("Medurs");
                 clockwise = true;
+                update_display();
             }
             delay(200);
         } else if (!digitalRead(btn)) {
             btn_press = 0;
-            delay(200);
+            delay(100);
         }
 
         analogValue = analogRead(POTENTIOMETER_PIN);
 
         if (analogValue == 0 && active) {
-            old_analogValue = analogValue;
+            old_analogValue = 0;
             active = false;
             Serial.println("off");
             smooth_freq(0, freq_sin);
@@ -261,7 +263,7 @@ void Task2code(void* pvParameters) {
             update_display();
 
         } else if (analogValue == 4095 && old_analogValue != 4095) {
-            old_analogValue = analogValue;
+            old_analogValue = 4095;
             active = true;
             Serial.print("go: ");
             Serial.println("49.5 Hz");
@@ -270,8 +272,8 @@ void Task2code(void* pvParameters) {
             Serial.println(freq_sin * 660);
             update_display();
 
-        } else if (analogValue > old_analogValue + 100 ||
-                   analogValue < old_analogValue - 100) {
+        } else if (analogValue > old_analogValue + 200 ||
+                   analogValue < old_analogValue - 200) {
             old_analogValue = analogValue;
             active = true;
             Serial.print("go: ");
