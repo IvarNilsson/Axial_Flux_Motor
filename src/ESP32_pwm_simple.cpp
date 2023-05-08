@@ -60,7 +60,6 @@ int count2 = 0;             // for tests
 boolean live1 = true;       // for tests
 boolean live2 = true;       // for tests
 
-
 void setup() {
     Serial.begin(115200);
     pinMode(pwm_pin1, OUTPUT);
@@ -145,17 +144,17 @@ void Task2code(void* pvParameters) {
     for (;;) {
         vTaskDelay(10);
         analogValue = analogRead(POTENTIOMETER_PIN);
-        /*
-                if (analogValue < 200) {
-                    freq_sin = 0.0003;
-                    old_analogValue = analogValue;
-                } else if (analogValue < 0.9 * old_analogValue ||
-                           analogValue > 1.1 * old_analogValue) {
-                    freq_sin = 0.000002 * analogValue;
-                    old_analogValue = analogValue;
-                }
-        */
-        freq_sin = 0.001;
+
+        if (analogValue < 200) {
+            freq_sin = 0.0003;
+            old_analogValue = analogValue;
+        } else if (analogValue < 0.9 * old_analogValue ||
+                   analogValue > 1.1 * old_analogValue) {
+            freq_sin = 0.000003 * analogValue;
+            old_analogValue = analogValue;
+        }
+
+        // freq_sin = 0.002;
 
         // Serial.print("sin freq: ");
         // Serial.println(freq_sin * 1000);

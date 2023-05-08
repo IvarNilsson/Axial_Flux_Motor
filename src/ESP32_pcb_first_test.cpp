@@ -59,17 +59,14 @@ void loop() {
     display.display();
 
     digitalWrite(pwm_pin1, 1);
-    delay(1000);
-    digitalWrite(pwm_pin1, 0);
     delay(100);
+    digitalWrite(pwm_pin1, 0);
 
     digitalWrite(pwm_pin2, 1);
-    delay(1000);
-    digitalWrite(pwm_pin2, 0);
     delay(100);
+    digitalWrite(pwm_pin2, 0);
 
     digitalWrite(pwm_pin3, 1);
-    delay(1000);
-    digitalWrite(pwm_pin3, 0);
     delay(100);
+    digitalWrite(pwm_pin3, 0);
 }
